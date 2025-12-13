@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -44,8 +45,20 @@ export default function CategoriesManagement() {
   }, [router]);
 
   const loadCategories = async () => {
-    // Placeholder - will connect to database later
-    setCategories([]);
+    if (!isSupabaseConfigured() || !supabase) {
+      setCategories([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error loading categories:', error);
+      setCategories([]);
+      return;
+    }
+    setCategories(data || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

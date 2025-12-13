@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { Tool, Category } from '@/lib/types';
 import FilteredToolsList from '@/components/FilteredToolsList';
 import EmptyState from '@/components/EmptyState';
@@ -11,34 +10,33 @@ interface CategoryPageProps {
   };
 }
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 async function getCategory(slug: string): Promise<Category | null> {
+  if (!isSupabaseConfigured() || !supabase) return null;
   const { data, error } = await supabase
     .from('categories')
     .select('*')
     .eq('slug', slug)
     .single();
-
   if (error) {
     console.error('Error fetching category:', error);
     return null;
   }
-
-  return data;
+  return data || null;
 }
 
 async function getToolsByCategory(categoryId: string): Promise<Tool[]> {
+  if (!isSupabaseConfigured() || !supabase) return [];
   const { data, error } = await supabase
     .from('tools')
     .select('*')
     .eq('category_id', categoryId)
-    .eq('status', 'approved')
     .order('upvotes', { ascending: false });
-
   if (error) {
-    console.error('Error fetching tools:', error);
+    console.error('Error fetching tools by category:', error);
     return [];
   }
-
   return data || [];
 }
 

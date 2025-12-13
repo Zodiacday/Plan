@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { Tool } from '@/lib/types';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -12,30 +11,34 @@ interface ToolPageProps {
   };
 }
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 async function getTool(slug: string): Promise<Tool | null> {
+  if (!isSupabaseConfigured() || !supabase) return null;
   const { data, error } = await supabase
     .from('tools')
     .select('*')
     .eq('slug', slug)
-    .eq('status', 'approved')
     .single();
-
   if (error) {
     console.error('Error fetching tool:', error);
     return null;
   }
-
-  return data;
+  return data || null;
 }
 
 async function getCategory(categoryId: string) {
-  const { data } = await supabase
+  if (!isSupabaseConfigured() || !supabase) return null;
+  const { data, error } = await supabase
     .from('categories')
-    .select('name, slug')
+    .select('*')
     .eq('id', categoryId)
     .single();
-  
-  return data;
+  if (error) {
+    console.error('Error fetching category:', error);
+    return null;
+  }
+  return data || null;
 }
 
 export async function generateMetadata({ params }: ToolPageProps): Promise<Metadata> {

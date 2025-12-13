@@ -1,10 +1,11 @@
 'use client';
 
+
 import { useState, useEffect } from 'react';
 import { Tool, Category } from '@/lib/types';
 import CompactToolCard from './CompactToolCard';
 import CompactCategoryCard from './CompactCategoryCard';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export default function InstantSearch() {
   const [query, setQuery] = useState('');
@@ -22,26 +23,33 @@ export default function InstantSearch() {
     const searchTimeout = setTimeout(async () => {
       setIsSearching(true);
       
-      const searchQuery = `%${query.trim()}%`;
-      
-      const [toolsResult, categoriesResult] = await Promise.all([
-        supabase
-          .from('tools')
-          .select('*')
-          .eq('status', 'approved')
-          .or(`name.ilike.${searchQuery},description.ilike.${searchQuery}`)
-          .order('upvotes', { ascending: false })
-          .limit(6),
-        supabase
-          .from('categories')
-          .select('*')
-          .or(`name.ilike.${searchQuery},description.ilike.${searchQuery}`)
-          .order('tool_count', { ascending: false })
-          .limit(4)
-      ]);
-
-      setTools(toolsResult.data || []);
-      setCategories(categoriesResult.data || []);
+      let tools: Tool[] = [];
+      let categories: Category[] = [];
+      if (isSupabaseConfigured() && supabase) {
+        const [toolsRes, categoriesRes] = await Promise.all([
+          supabase
+            .from('tools')
+            .select('*')
+            .eq('status', 'approved')
+            .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+            .order('upvotes', { ascending: false })
+            .limit(6),
+          supabase
+            .from('categories')
+            .select('*')
+            .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+            .order('tool_count', { ascending: false })
+            .limit(4)
+        ]);
+        if (!toolsRes.error && Array.isArray(toolsRes.data)) {
+          tools = toolsRes.data;
+        }
+        if (!categoriesRes.error && Array.isArray(categoriesRes.data)) {
+          categories = categoriesRes.data;
+        }
+      }
+      setTools(tools);
+      setCategories(categories);
       setIsSearching(false);
     }, 300);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -42,8 +43,20 @@ export default function ToolsManagement() {
   }, [router]);
 
   const loadTools = async () => {
-    // Placeholder - will connect to database later
-    setTools([]);
+    if (!isSupabaseConfigured() || !supabase) {
+      setTools([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('tools')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error loading tools:', error);
+      setTools([]);
+      return;
+    }
+    setTools(data || []);
   };
 
   const handleDelete = async (id: string) => {

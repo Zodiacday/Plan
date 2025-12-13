@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { Category } from '@/lib/types';
 import CategoryCard from '@/components/CategoryCard';
 import InstantSearch from '@/components/InstantSearch';
@@ -9,17 +8,18 @@ export const metadata: Metadata = {
   description: 'Browse all tool categories and find the perfect free tools for your needs.',
 };
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 async function getAllCategories(): Promise<Category[]> {
+  if (!isSupabaseConfigured() || !supabase) return [];
   const { data, error } = await supabase
     .from('categories')
     .select('*')
-    .order('name', { ascending: true });
-
+    .order('tool_count', { ascending: false });
   if (error) {
     console.error('Error fetching categories:', error);
     return [];
   }
-
   return data || [];
 }
 

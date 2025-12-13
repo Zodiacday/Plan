@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { Tool, Category } from '@/lib/types';
 import ToolCard from '@/components/ToolCard';
 import CategoryCard from '@/components/CategoryCard';
@@ -8,44 +7,35 @@ interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
 }
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 async function searchTools(query: string): Promise<Tool[]> {
-  if (!query || query.trim().length < 2) return [];
-  
-  const searchQuery = `%${query.trim()}%`;
-  
+  if (!isSupabaseConfigured() || !supabase) return [];
   const { data, error } = await supabase
     .from('tools')
     .select('*')
-    .eq('status', 'approved')
-    .or(`name.ilike.${searchQuery},description.ilike.${searchQuery}`)
+    .ilike('name', `%${query}%`)
     .order('upvotes', { ascending: false })
-    .limit(50);
-
+    .limit(20);
   if (error) {
     console.error('Error searching tools:', error);
     return [];
   }
-
   return data || [];
 }
 
 async function searchCategories(query: string): Promise<Category[]> {
-  if (!query || query.trim().length < 2) return [];
-  
-  const searchQuery = `%${query.trim()}%`;
-  
+  if (!isSupabaseConfigured() || !supabase) return [];
   const { data, error } = await supabase
     .from('categories')
     .select('*')
-    .or(`name.ilike.${searchQuery},description.ilike.${searchQuery}`)
+    .ilike('name', `%${query}%`)
     .order('tool_count', { ascending: false })
     .limit(20);
-
   if (error) {
     console.error('Error searching categories:', error);
     return [];
   }
-
   return data || [];
 }
 

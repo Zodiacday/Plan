@@ -1,39 +1,37 @@
-import { supabase } from '@/lib/supabase';
 import { Tool, Category } from '@/lib/types';
 import ToolCard from '@/components/ToolCard';
 import CategoryCard from '@/components/CategoryCard';
 import InstantSearch from '@/components/InstantSearch';
 import Link from 'next/link';
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
 async function getFeaturedTools(): Promise<Tool[]> {
+  if (!isSupabaseConfigured() || !supabase) return [];
   const { data, error } = await supabase
     .from('tools')
     .select('*')
     .eq('featured', true)
-    .eq('status', 'approved')
     .order('upvotes', { ascending: false })
-    .limit(6);
-
+    .limit(12);
   if (error) {
-    console.error('Error fetching tools:', error);
+    console.error('Error fetching featured tools:', error);
     return [];
   }
-
   return data || [];
 }
 
 async function getFeaturedCategories(): Promise<Category[]> {
+  if (!isSupabaseConfigured() || !supabase) return [];
   const { data, error } = await supabase
     .from('categories')
     .select('*')
     .order('tool_count', { ascending: false })
     .limit(8);
-
   if (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error fetching featured categories:', error);
     return [];
   }
-
   return data || [];
 }
 
